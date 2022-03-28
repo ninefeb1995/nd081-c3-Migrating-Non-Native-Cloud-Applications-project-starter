@@ -3,8 +3,16 @@ from datetime import datetime
 from app.models import Attendee, Conference, Notification
 from flask import render_template, session, request, redirect, url_for, flash, make_response, session
 from azure.servicebus.aio import Message
+from functools import wraps
 import logging
 import asyncio
+
+
+def async_decor(func):
+    @wraps(func)
+    def wrapped(*args, **kwargs):
+        return asyncio.run(func(*args, **kwargs))
+    return wrapped
 
 
 @app.route('/')
@@ -58,7 +66,8 @@ def notifications():
 
 
 @app.route('/Notification', methods=['POST', 'GET'])
-def notification():
+@async_decor
+async def notification():
     if request.method == 'POST':
         notification = Notification()
         notification.message = request.form['message']
@@ -70,15 +79,8 @@ def notification():
             db.session.add(notification)
             db.session.commit()
 
-            # servicebus_client = ServiceBusClient.from_connection_string(conn_str=app.config.get('SERVICE_BUS_CONNECTION_STRING'), logging_enable=True)
-            # sender = servicebus_client.get_queue_sender(queue_name=app.config.get('SERVICE_BUS_QUEUE_NAME'))
-            # message = ServiceBusMessage(f"{notification.id}")
-            # sender.send_messages(message)
-
-            # client = ServiceBusClient.from_connection_string(conn_str=app.config.get('SERVICE_BUS_CONNECTION_STRING'))
-            # queue_client = client.get_queue(app.config.get('SERVICE_BUS_QUEUE_NAME'))
             with queue_client.get_sender() as sender:
-                message = Message(f"{notification.id}", loop=asyncio.get_running_loop())
+                message = Message(f"{notification.id}")
                 sender.send(message)
 
             return redirect('/Notifications')

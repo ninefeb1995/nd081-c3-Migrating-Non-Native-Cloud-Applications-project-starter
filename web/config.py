@@ -14,7 +14,7 @@ class BaseConfig:
     SQLALCHEMY_DATABASE_URI = os.getenv('SQLALCHEMY_DATABASE_URI') or DB_URL
     CONFERENCE_ID = 1
     SECRET_KEY = 'LWd2tzlprdGHCIPHTd4tp5SBFgDszm'
-    SERVICE_BUS_CONNECTION_STRING = 'Endpoint=sb://finalproject3-sb-demo1.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=XCc5l6fJHuUojsMlynkqUFoLwofswf2V+R1gt9SHxZA='  # TODO: Update value
+    SERVICE_BUS_CONNECTION_STRING = 'Endpoint=sb://finalproject3-sb-demo1.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=83xk7nb2+yzMQaWkLcwdrzZEygmgMSBE58eKl0G+8aU='  # TODO: Update value
     SERVICE_BUS_QUEUE_NAME = 'notificationqueue'
 
 
