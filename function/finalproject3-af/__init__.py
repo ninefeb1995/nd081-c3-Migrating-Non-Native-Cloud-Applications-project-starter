@@ -24,7 +24,7 @@ def main(msg: func.ServiceBusMessage):
 
         # Get notification message and subject from database using the notification_id
         cur.execute(
-            f"SELECT * FROM public.notification where public.notification.id = {notification_id}")
+            f"SELECT * FROM public.notification WHERE public.notification.id = {notification_id}")
         notification = cur.fetchall()
 
         # Get attendees email and name
@@ -42,9 +42,9 @@ def main(msg: func.ServiceBusMessage):
         new_status = f"Notified {count} attendees"
 
         # Update the notification table by setting the completed date and updating the status with the total number of attendees notified
-        update_notification_query = f"Update public.notification.id set status = '{new_status}', completed_date = '{datetime.utcnow()}' where public.notification.id = {notification_id}"
+        update_notification_query = f"UPDATE public.notification SET status = '{new_status}', completed_date = '{datetime.utcnow()}' WHERE public.notification.id = {notification_id}"
         cur.execute(update_notification_query)
-        cur.commit()
+        conn.commit()
 
     except (Exception, psycopg2.DatabaseError) as error:
         logging.error(error)
