@@ -15,10 +15,10 @@ def main(msg: func.ServiceBusMessage):
         'Python ServiceBus queue trigger processed message: %s', notification_id)
 
     conn = psycopg2.connect(
-        host="finalproject3-db-server.postgres.database.azure.com",
-        database="techconfdb",
-        user="finalproject3dbadmin",
-        password="123456Thinh!")
+        host=os.environ["DB_HOST"],
+        database=os.environ["DB_NAME"],
+        user=os.environ["DB_USER"],
+        password=os.environ["DB_PASS"])
 
     try:
         cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
@@ -28,25 +28,27 @@ def main(msg: func.ServiceBusMessage):
             f"SELECT * FROM public.notification WHERE public.notification.id = {notification_id}")
         notification = dict(cur.fetchone())
 
-        # Get attendees email and name
-        cur.execute(f"SELECT * FROM public.attendee ORDER BY id ASC ")
-        attendees = cur.fetchall()
+        if notification:
+            # Get attendees email and name
+            cur.execute(f"SELECT * FROM public.attendee ORDER BY id ASC ")
+            attendees = cur.fetchall()
 
-        # Loop through each attendee and send an email with a personalized subject
-        count = 0
-        for attendee in attendees:
-            dict_attendee = dict(attendee)
-            subject = '{}: {}'.format(
-                dict_attendee["first_name"], notification["subject"])
-            send_email(dict_attendee["email"], subject, notification["message"])
-            count += 1
+            # Loop through each attendee and send an email with a personalized subject
+            count = 0
+            for attendee in attendees:
+                dict_attendee = dict(attendee)
+                subject = '{}: {}'.format(
+                    dict_attendee["first_name"], notification["subject"])
+                send_email(dict_attendee["email"], subject, notification["message"])
+                count += 1
 
-        new_status = f"Notified {count} attendees"
+            if count > 0:
+                new_status = f"Notified {count} attendees"
 
-        # Update the notification table by setting the completed date and updating the status with the total number of attendees notified
-        update_notification_query = f"UPDATE public.notification SET status = '{new_status}', completed_date = '{datetime.utcnow()}' WHERE public.notification.id = {notification_id}"
-        cur.execute(update_notification_query)
-        conn.commit()
+                # Update the notification table by setting the completed date and updating the status with the total number of attendees notified
+                update_notification_query = f"UPDATE public.notification SET status = '{new_status}', completed_date = '{datetime.utcnow()}' WHERE public.notification.id = {notification_id}"
+                cur.execute(update_notification_query)
+                conn.commit()
 
     except (Exception, psycopg2.DatabaseError) as error:
         logging.error(error)
