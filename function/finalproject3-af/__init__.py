@@ -5,6 +5,7 @@ import os
 from datetime import datetime
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
+import psycopg2.extras
 
 
 def main(msg: func.ServiceBusMessage):
@@ -20,12 +21,12 @@ def main(msg: func.ServiceBusMessage):
         password="123456Thinh!")
 
     try:
-        cur = conn.cursor()
+        cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
         # Get notification message and subject from database using the notification_id
         cur.execute(
             f"SELECT * FROM public.notification WHERE public.notification.id = {notification_id}")
-        notification = cur.fetchall()
+        notification = dict(cur.fetchone())
 
         # Get attendees email and name
         cur.execute(f"SELECT * FROM public.attendee ORDER BY id ASC ")
@@ -34,9 +35,10 @@ def main(msg: func.ServiceBusMessage):
         # Loop through each attendee and send an email with a personalized subject
         count = 0
         for attendee in attendees:
+            dict_attendee = dict(attendee)
             subject = '{}: {}'.format(
-                attendee.first_name, notification.subject)
-            send_email(attendee.email, subject, notification.message)
+                dict_attendee["first_name"], notification["subject"])
+            send_email(dict_attendee["email"], subject, notification["message"])
             count += 1
 
         new_status = f"Notified {count} attendees"
@@ -62,6 +64,8 @@ def send_email(email, subject, body):
             to_emails=email,
             subject=subject,
             plain_text_content=body)
-
-        sg = SendGridAPIClient(SENDGRID_API_KEY)
-        sg.send(message)
+        try:
+            sg = SendGridAPIClient(SENDGRID_API_KEY)
+            sg.send(message)
+        except Exception as e:
+            logging.error(e.message)
