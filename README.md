@@ -68,5 +68,17 @@ Complete a month cost analysis of each Azure resource to give an estimate total 
 | *Azure Web App*                 | B1 (Linux)   | $14.60/month                                                                | East Asia |
 | *Azure Azure Function*          | Consumption  | Execution Time: $0.000016/GB-s (Free: 400,000 GB-s)                         | East Asia |
 |                                 |              | Total Executions: $0.20 per million executions (Free: 1 million executions) | East Asia |
+| Azure Cache for Redis           | C0           | $16.06/month                                                                | East Asia |
 
 ## Architecture Explanation
+
+With sending background email functionality, it is quite small and independent and it is an event trigger. Our app can be running on demand, so Azure Function is suitable for this. Because with AF, we pay per call and do not pay anything when we do use. Execution Count and Execution Time are two concepts of the cost in AF.
+Let assume that I start my function a 1 hour. There were 5000 executions and 700 million MB Function Execution Units consumed.
+We have the 1-hour calculation:
+
+   - Execution Count = 5000 * $0.20 / 1,000,000 = $0.0001
+   - Execution Time = 700,000,000 / 1,024,000 * $16 / 1,000,000 = $0.0109375
+   - 60 Min Total = Execution Count + Execution Time = $0.0110375
+
+For the website, we can use Azure Web App or deploy on Azure Virtual Machine. VM is more expensive than Azure App Service to run, and also takes more time consuming of developers than App Sercice. For the current state of this app, I would refer Azure App Service.
+If I start Azure Web App with 1 instance with B1 Tier for Linux: It will cost me $14.60/month. If I start Azure VM with 1 B1ms instance with for Ubuntu: It will cost me $21.316/month.
