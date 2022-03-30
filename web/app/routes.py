@@ -6,6 +6,7 @@ from azure.servicebus.aio import Message
 from functools import wraps
 import logging
 import asyncio
+import redis
 
 
 def async_decor(func):
@@ -22,6 +23,9 @@ def index():
 
 @app.route('/Registration', methods=['POST', 'GET'])
 def registration():
+    r = redis.StrictRedis(host=app.config.get('REDIS_HOST'), port=6380,
+                          password=app.config.get('REDIS_PASS'), ssl=True)
+    r_test = r.ping()
     if request.method == 'POST':
         attendee = Attendee()
         attendee.first_name = request.form['first_name']
@@ -38,16 +42,23 @@ def registration():
         try:
             db.session.add(attendee)
             db.session.commit()
-            session['message'] = 'Thank you, {} {}, for registering!'.format(
-                attendee.first_name, attendee.last_name)
+            if not r_test:
+                session['message'] = 'Thank you, {} {}, for registering!'.format(
+                    attendee.first_name, attendee.last_name)
+            else:
+                r.set('message', 'Thank you, {} {}, for registering!'.format(
+                    attendee.first_name, attendee.last_name))
             return redirect('/Registration')
         except:
             logging.error('Error occured while saving your information')
 
     else:
-        if 'message' in session:
+        if not r_test and 'message' in session:
             message = session['message']
             session.pop('message', None)
+            return render_template('registration.html', message=message)
+        elif r_test:
+            message = r.get('message')
             return render_template('registration.html', message=message)
         else:
             return render_template('registration.html')
@@ -80,7 +91,7 @@ async def notification():
             db.session.commit()
 
             with queue_client.get_sender() as sender:
-                message = Message(f"{notification.id}")
+                message = Message(f'{notification.id}')
                 sender.send(message)
 
             return redirect('/Notifications')

@@ -16,6 +16,8 @@ class BaseConfig:
     SECRET_KEY = 'LWd2tzlprdGHCIPHTd4tp5SBFgDszm'
     SERVICE_BUS_CONNECTION_STRING = 'Endpoint=sb://finalproject3-sb-demo1.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=83xk7nb2+yzMQaWkLcwdrzZEygmgMSBE58eKl0G+8aU='  # TODO: Update value
     SERVICE_BUS_QUEUE_NAME = 'notificationqueue'
+    REDIS_HOST = ''
+    REDIS_PASS = ''
 
 
 class DevelopmentConfig(BaseConfig):
